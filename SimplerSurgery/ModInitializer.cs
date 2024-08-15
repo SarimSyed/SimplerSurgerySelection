@@ -58,7 +58,7 @@ namespace SimplerSurgery
 
                     InvokeGenerateSurgeryOptions(pawn, hediff);
                    
-                    Log.Message("FloatMenu added to stack");
+                    Log.Message("-------------------");
                     //Find.WindowStack.Add(new InjuryWindow(hediff));
 
                 }
@@ -72,25 +72,17 @@ namespace SimplerSurgery
 
 
         }
-        private static FloatMenuOption GenerateSurgeryOptions(Pawn pawn, Hediff hediff)
-        {
-            string label = $"Perform surgery on {hediff.LabelCap}";
-            System.Action action = delegate
-            {
-                Log.Message($"Surgery option selected for {hediff.LabelCap} on {pawn.Name}");
-            };
-            return new FloatMenuOption(label, action);
-        }
+
 
 
         //Absolute terribly written and formatted code but its my first "Advance mod"
         //This was just a learning experience so I should focus more on the formatting in the future
         private static void InvokeGenerateSurgeryOptions(Pawn pawn, Hediff hediff)
         {
-            Log.Warning($"All hediff info: {hediff}");
+            //Log.Warning($"All hediff info: {hediff}");
             if ( hediff == null)
             {
-                Log.Message($"Pawn: {pawn}");
+                Log.Message($"Pawn is null: {pawn}");
                 return;
             }
             if ( hediff.Part == null)
@@ -101,44 +93,52 @@ namespace SimplerSurgery
             }
             if(pawn.def.AllRecipes == null)
             {
-                Log.Message($"AllRecipes: {pawn.def.AllRecipes.Count()}");
+                Log.Message($"AllRecipes is null: {pawn.def.AllRecipes.Count()}");
                 return ;
             }
             if (hediff.Part.def == null)
             {
-            Log.Message($"part.def: {hediff.Part.def}");
+            Log.Message($"part.def is null: {hediff.Part.def}");
                 return;
 
             }
             int num = 0;
             //Getting a list of all recipes and filtering it based on the body parts
+
+            //Maybe dont filter based on prosthetics and bionic arm and do it afterwards
+
             IEnumerable<RecipeDef> recipes
-                = pawn.def.AllRecipes.Where(r => r.AvailableNow && r.targetsBodyPart && NotMissingVitalIngredient(pawn, r) && r.appliedOnFixedBodyParts.Contains(hediff.Part.def));
+                = pawn.def.AllRecipes.Where(r => r.AvailableNow && r.targetsBodyPart && NotMissingVitalIngredient(pawn, r) && ( r.appliedOnFixedBodyParts.Any(bp => bp.defName.ToLower().Contains("arm") ||
+                bp.defName.ToLower().Contains("arm"))) || r.appliedOnFixedBodyParts.Contains(hediff.Part.def) );
+
+            
             Log.Message($"Hediff Part: {hediff.Part.def} \n just the Part: {hediff.Part}");
             if(recipes == null)
             {
-                Log.Warning($"recipes is null: {recipes}");
+                //Log.Warning($"recipes is null: {recipes}");
                 return;
             }
             Log.Warning($"RecipeDef: {recipes.Count()}");
-            
+
             //Exposing a private method to generate surgery bills
             MethodInfo generateSurgeryBillMethod =
                 typeof(HealthCardUtility).GetMethod("GenerateSurgeryOption", BindingFlags.NonPublic | BindingFlags.Static);
             //Empty list of FloatMenuOption, this is the dropdown and each option is an option in the dropdown
             List<FloatMenuOption> options = new List<FloatMenuOption>();
-            Log.Warning($"generateSurgeryBillMethod: {options}");
+
+            //Log.Warning($"generateSurgeryBillMethod: {options}");
+
             if (generateSurgeryBillMethod != null)
             {
-                Log.Message($"Recipes: {recipes}");
-                Log.Message("GenerateSurgeryOptions method invoked.");
+                //Log.Message($"Recipes: {recipes}");
+                //Log.Message("GenerateSurgeryOptions method invoked.");
                 foreach (RecipeDef recipe in recipes)
                 {
-                    Log.Message($"recipe: {recipe}");
+                    Log.Message($"recipe: {recipe.label}");
                     List<ThingDef> missingIngredients =
                         recipe.PotentiallyMissingIngredients(null, pawn.Map).ToList();
                     AcceptanceReport report = recipe.Worker.AvailableReport(pawn);
-                    Log.Message($"Report: {report}");
+                    //Log.Message($"Report: {report}");
 
                     //ACCEPTANCE REPORT ACCEPTED
                     if (report.Accepted || !report.Reason.NullOrEmpty())
@@ -146,24 +146,35 @@ namespace SimplerSurgery
                         //I think this is filtering the recipe thingDef based on whther if its a drug or recipes 
                         //used in surgeries
                         IEnumerable<ThingDef> enumerable = recipe.PotentiallyMissingIngredients(null, pawn.Map);
-                        Log.Message($"enumerable: {enumerable}");
+                        //Log.Message($"enumerable: {enumerable}");
                         if (!enumerable.Any((ThingDef x) => x.isTechHediff) && !enumerable.Any((ThingDef x) => x.IsDrug &&
                         (!enumerable.Any() || !recipe.dontShowIfAnyIngredientMissing))){
 
-                            Log.Message($"Targets Body Part: {recipe.targetsBodyPart}");
+                            //Log.Message($"Targets Body Part: {recipe.targetsBodyPart}");
                         if (recipe.targetsBodyPart)
                         {
-                                Log.Message("Inside the targetsBodyPart if statement");
+                                //Log.Message("Inside the targetsBodyPart if statement");
                             foreach (BodyPartRecord item in recipe.Worker.GetPartsToApplyOn(pawn, recipe))
                             {
 
+                                    //foreach (BodyPartRecord part in recipe.Worker.GetPartsToApplyOn(pawn, recipe))
+                                    //{
+                                    //    //Log.Message($"----------------- \nBody Part: {part}");
+                                    //}
+
+
                                 if (recipe.AvailableOnNow(pawn, item))
-                                {
-                                        options.Add((FloatMenuOption)generateSurgeryBillMethod.Invoke(null, new object[]
+                                    {
+                                        string side = item.def.label.ToLower().Contains("left") ? "left"
+                                        : item.def.label.ToLower().Contains("right") ? "right" : "noSide";
+
+                                        //Log.Message($"Def label: {item.def.label} \n side: {side}\n Def: {item.def}");
+
+                                        options.Add((FloatMenuOption)generateSurgeryBillMethod.Invoke(null, new                     object[]
                                         {
                                         pawn, pawn, recipe, enumerable, report, num++, item
                                         }));
-                                        Log.Message($"Added menu option for recipe: {recipe.defName}");
+                                        //Log.Message($"Added menu option for recipe: {recipe.defName}");
 
                                  }
 
@@ -195,19 +206,7 @@ namespace SimplerSurgery
 
             return hediffDef.stages?.Any(hs => hs.painFactor < 1f || hs.painOffset < 0f) ?? false;
         }
-        public static bool AddsHediffThatReducesPain(this RecipeDef r)
-        {
-            return r.addsHediff.IsHediffThatReducesPain();
-        }
-        public static bool AdministersDrugThatReducesPain(this RecipeDef r)
-        {
-            if (r.ingredients.NullOrEmpty())
-            {
-                return false;
-            }
 
-            return r.ingredients[0].filter.BestThingRequest.singleDef.ReducesPainOnIngestion();
-        }
         public static bool ReducesPainOnIngestion(this ThingDef def)
         {
             return

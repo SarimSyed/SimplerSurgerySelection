@@ -10,6 +10,7 @@ using RimWorld;
 
 namespace SimplerSurgery
 {
+    //Unused for now
     public class InjuryWindow : Window
     {
         private Hediff hediff;

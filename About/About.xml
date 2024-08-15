@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ModMetaData>
-    <name>Harmony Patch Test</name>
-    <author>"Barim"</author>
-    <packageId>Tallermage.harmony.test</packageId>
-    <description>"A message should be logged when a battery is hurt"</description>
+    <name>Simple Surgery Shortcut</name>
+    <author>Tallermage</author>
+    <packageId>tallermage.simplesurgery</packageId>
+    <description>Injuries can be clicked and the available surgeries for that body part will be displayed. I often found myself going back and forth between the operation bill selection dropdown and the injury screen because I didn't want to install a prosthetic or bionic body part to the wrong leg/arm/eye. This should make it easier to treat the part that's actually damaged.</description>
     <supportedVersions>
 		<li>1.5</li>
     </supportedVersions>
