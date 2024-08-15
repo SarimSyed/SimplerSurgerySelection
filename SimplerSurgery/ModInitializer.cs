@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using Verse;
 
-
 namespace SimplerSurgery
 {
     [StaticConstructorOnStartup]
@@ -30,7 +29,8 @@ namespace SimplerSurgery
             harmony.PatchAll();
         }
     }
-    //TargetMethod is used to access a private method which i needed to set up a 
+
+    //TargetMethod is used to access a private method which i needed to set up a
     //"ClickHandler"
 
     [HarmonyPatch(typeof(HealthCardUtility))]
@@ -38,8 +38,7 @@ namespace SimplerSurgery
     {
         //[HarmonyPatch(nameof(HealthCardUtility), nameof(HealthCardUtility.)]
 
-
-        static MethodBase TargetMethod()
+        private static MethodBase TargetMethod()
         {
             return AccessTools.Method(typeof(HealthCardUtility), "EntryClicked", new[] { typeof(IEnumerable<Hediff>), typeof(Pawn) });
         }
@@ -47,7 +46,6 @@ namespace SimplerSurgery
         [HarmonyPostfix]
         public static void Postfix(IEnumerable<Hediff> diffs, Pawn pawn)
         {
-
             try
             {
                 foreach (var hediff in diffs)
@@ -57,50 +55,41 @@ namespace SimplerSurgery
                     //Surgery dropdown
 
                     InvokeGenerateSurgeryOptions(pawn, hediff);
-                   
+
                     Log.Message("-------------------");
                     //Find.WindowStack.Add(new InjuryWindow(hediff));
-
                 }
-
             }
             catch (System.Exception ex)
             {
-                
                 Log.Error($"Error thrown in the healthcard click patch: {ex.Message}");
             }
-
-
         }
-
-
 
         //Absolute terribly written and formatted code but its my first "Advance mod"
         //This was just a learning experience so I should focus more on the formatting in the future
         private static void InvokeGenerateSurgeryOptions(Pawn pawn, Hediff hediff)
         {
             //Log.Warning($"All hediff info: {hediff}");
-            if ( hediff == null)
+            if (hediff == null)
             {
                 Log.Message($"Pawn is null: {pawn}");
                 return;
             }
-            if ( hediff.Part == null)
+            if (hediff.Part == null)
             {
-            Log.Message($"PartL: {hediff.Part}");
+                Log.Message($"PartL: {hediff.Part}");
                 return;
-
             }
-            if(pawn.def.AllRecipes == null)
+            if (pawn.def.AllRecipes == null)
             {
                 Log.Message($"AllRecipes is null: {pawn.def.AllRecipes.Count()}");
-                return ;
+                return;
             }
             if (hediff.Part.def == null)
             {
-            Log.Message($"part.def is null: {hediff.Part.def}");
+                Log.Message($"part.def is null: {hediff.Part.def}");
                 return;
-
             }
             int num = 0;
             //Getting a list of all recipes and filtering it based on the body parts
@@ -108,12 +97,12 @@ namespace SimplerSurgery
             //Maybe dont filter based on prosthetics and bionic arm and do it afterwards
 
             IEnumerable<RecipeDef> recipes
-                = pawn.def.AllRecipes.Where(r => r.AvailableNow && r.targetsBodyPart && NotMissingVitalIngredient(pawn, r) && ( r.appliedOnFixedBodyParts.Any(bp => bp.defName.ToLower().Contains("arm") ||
-                bp.defName.ToLower().Contains("arm"))) || r.appliedOnFixedBodyParts.Contains(hediff.Part.def) );
+                = pawn.def.AllRecipes.Where(r => r.AvailableNow && r.targetsBodyPart
+                
+                && r.appliedOnFixedBodyParts.Contains(hediff.Part.def));
 
-            
             Log.Message($"Hediff Part: {hediff.Part.def} \n just the Part: {hediff.Part}");
-            if(recipes == null)
+            if (recipes == null)
             {
                 //Log.Warning($"recipes is null: {recipes}");
                 return;
@@ -143,47 +132,40 @@ namespace SimplerSurgery
                     //ACCEPTANCE REPORT ACCEPTED
                     if (report.Accepted || !report.Reason.NullOrEmpty())
                     {
-                        //I think this is filtering the recipe thingDef based on whther if its a drug or recipes 
+                        //I think this is filtering the recipe thingDef based on whther if its a drug or recipes
                         //used in surgeries
                         IEnumerable<ThingDef> enumerable = recipe.PotentiallyMissingIngredients(null, pawn.Map);
                         //Log.Message($"enumerable: {enumerable}");
                         if (!enumerable.Any((ThingDef x) => x.isTechHediff) && !enumerable.Any((ThingDef x) => x.IsDrug &&
-                        (!enumerable.Any() || !recipe.dontShowIfAnyIngredientMissing))){
-
-                            //Log.Message($"Targets Body Part: {recipe.targetsBodyPart}");
-                        if (recipe.targetsBodyPart)
+                        (!enumerable.Any() || !recipe.dontShowIfAnyIngredientMissing)))
                         {
-                                //Log.Message("Inside the targetsBodyPart if statement");
-                            foreach (BodyPartRecord item in recipe.Worker.GetPartsToApplyOn(pawn, recipe))
+                            //Log.Message($"Targets Body Part: {recipe.targetsBodyPart}");
+                            if (recipe.targetsBodyPart)
                             {
-
+                                //Log.Message("Inside the targetsBodyPart if statement");
+                                foreach (BodyPartRecord item in recipe.Worker.GetPartsToApplyOn(pawn, recipe))
+                                {
                                     //foreach (BodyPartRecord part in recipe.Worker.GetPartsToApplyOn(pawn, recipe))
                                     //{
                                     //    //Log.Message($"----------------- \nBody Part: {part}");
                                     //}
-
-
-                                if (recipe.AvailableOnNow(pawn, item))
+                                    if (recipe.AvailableOnNow(pawn, item))
                                     {
-                                        string side = item.def.label.ToLower().Contains("left") ? "left"
-                                        : item.def.label.ToLower().Contains("right") ? "right" : "noSide";
+                                        //string side = item.def.label.ToLower().Contains("left") ? "left"
+                                        //: item.def.label.ToLower().Contains("right") ? "right" : "noSide";
 
                                         //Log.Message($"Def label: {item.def.label} \n side: {side}\n Def: {item.def}");
 
-                                        options.Add((FloatMenuOption)generateSurgeryBillMethod.Invoke(null, new                     object[]
+                                        options.Add((FloatMenuOption)generateSurgeryBillMethod.Invoke(null, new object[]
                                         {
                                         pawn, pawn, recipe, enumerable, report, num++, item
                                         }));
                                         //Log.Message($"Added menu option for recipe: {recipe.defName}");
-
-                                 }
-
+                                    }
+                                }
                             }
                         }
                     }
-
-                    }
-
                 }
                 if (options.Count == 0)
                 {
@@ -194,9 +176,14 @@ namespace SimplerSurgery
             else
             {
                 Log.Error("GenerateSurgeryOptions method not found");
-                
             }
         }
+
+        [HarmonyPostfix]
+        public static void PrintSurgeryBillMethod()
+        {
+        }
+
         public static bool IsHediffThatReducesPain(this HediffDef hediffDef)
         {
             if (hediffDef?.stages.NullOrEmpty() ?? true)
@@ -213,9 +200,15 @@ namespace SimplerSurgery
                 def?.ingestible?.outcomeDoers?.OfType<IngestionOutcomeDoer_GiveHediff>()
                     .Any(od => od.hediffDef.IsHediffThatReducesPain()) ?? false;
         }
+
         public static bool NotMissingVitalIngredient(Pawn pawn, RecipeDef r)
         {
             return !r.PotentiallyMissingIngredients(null, pawn.Map).Any();
+        }
+
+        public static IEnumerable<BodyPartRecord> GetPartsToApplyOn(Pawn pawn, RecipeDef recipeDef)
+        {
+            return recipeDef.Worker.GetPartsToApplyOn(pawn, recipeDef);
         }
     }
 }
