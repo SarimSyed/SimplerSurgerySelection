@@ -88,7 +88,28 @@ namespace SimplerSurgery
         private static void InvokeGenerateSurgeryOptions(Pawn pawn, Hediff hediff)
         {
             Log.Warning($"All hediff info: {hediff}");
-            Log.Message($"Pawn: {pawn}");
+            if ( hediff == null)
+            {
+                Log.Message($"Pawn: {pawn}");
+                return;
+            }
+            if ( hediff.Part == null)
+            {
+            Log.Message($"PartL: {hediff.Part}");
+                return;
+
+            }
+            if(pawn.def.AllRecipes == null)
+            {
+                Log.Message($"AllRecipes: {pawn.def.AllRecipes.Count()}");
+                return ;
+            }
+            if (hediff.Part.def == null)
+            {
+            Log.Message($"part.def: {hediff.Part.def}");
+                return;
+
+            }
             int num = 0;
             //Getting a list of all recipes and filtering it based on the body parts
             IEnumerable<RecipeDef> recipes
