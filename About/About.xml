@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ModMetaData>
+    <name>Harmony Patch Test</name>
+    <author>"Barim"</author>
+    <packageId>Tallermage.harmony.test</packageId>
+    <description>"A message should be logged when a battery is hurt"</description>
+    <supportedVersions>
+		<li>1.5</li>
+    </supportedVersions>
+</ModMetaData>
+<!--
+When adding a preview photo
+
+Must be called Preview.png
+
+Should be
+640x360
+
+Must Not Be Larger then 1MB in size
+ -->
