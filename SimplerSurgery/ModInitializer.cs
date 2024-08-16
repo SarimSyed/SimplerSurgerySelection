@@ -36,7 +36,6 @@ namespace SimplerSurgery
     [HarmonyPatch(typeof(HealthCardUtility))]
     public static class HealthCardUtility_Click_Patch
     {
-        //[HarmonyPatch(nameof(HealthCardUtility), nameof(HealthCardUtility.)]
 
         private static MethodBase TargetMethod()
         {
@@ -97,14 +96,20 @@ namespace SimplerSurgery
             //Maybe dont filter based on prosthetics and bionic arm and do it afterwards
 
             IEnumerable<RecipeDef> recipes
-                = pawn.def.AllRecipes.Where(r => r.AvailableNow && r.targetsBodyPart
-                
-                && r.appliedOnFixedBodyParts.Contains(hediff.Part.def));
+                = pawn.def.AllRecipes.Where(r => (r.targetsBodyPart
+                && r.appliedOnFixedBodyParts.Any(bp =>
+                {
+                    //Logic with bp here
+                    return true;
+                })
+                && (r.appliedOnFixedBodyParts.Contains(hediff.Part.def))
+                || IsRelatedBodyPart(r.appliedOnFixedBodyParts, hediff.Part.def))
+                || r.defName.ToLower().Contains("remove"));
+
 
             Log.Message($"Hediff Part: {hediff.Part.def} \n just the Part: {hediff.Part}");
             if (recipes == null)
             {
-                //Log.Warning($"recipes is null: {recipes}");
                 return;
             }
             Log.Warning($"RecipeDef: {recipes.Count()}");
@@ -115,19 +120,15 @@ namespace SimplerSurgery
             //Empty list of FloatMenuOption, this is the dropdown and each option is an option in the dropdown
             List<FloatMenuOption> options = new List<FloatMenuOption>();
 
-            //Log.Warning($"generateSurgeryBillMethod: {options}");
 
             if (generateSurgeryBillMethod != null)
             {
-                //Log.Message($"Recipes: {recipes}");
-                //Log.Message("GenerateSurgeryOptions method invoked.");
                 foreach (RecipeDef recipe in recipes)
                 {
                     Log.Message($"recipe: {recipe.label}");
                     List<ThingDef> missingIngredients =
                         recipe.PotentiallyMissingIngredients(null, pawn.Map).ToList();
                     AcceptanceReport report = recipe.Worker.AvailableReport(pawn);
-                    //Log.Message($"Report: {report}");
 
                     //ACCEPTANCE REPORT ACCEPTED
                     if (report.Accepted || !report.Reason.NullOrEmpty())
@@ -135,32 +136,23 @@ namespace SimplerSurgery
                         //I think this is filtering the recipe thingDef based on whther if its a drug or recipes
                         //used in surgeries
                         IEnumerable<ThingDef> enumerable = recipe.PotentiallyMissingIngredients(null, pawn.Map);
-                        //Log.Message($"enumerable: {enumerable}");
                         if (!enumerable.Any((ThingDef x) => x.isTechHediff) && !enumerable.Any((ThingDef x) => x.IsDrug &&
                         (!enumerable.Any() || !recipe.dontShowIfAnyIngredientMissing)))
                         {
-                            //Log.Message($"Targets Body Part: {recipe.targetsBodyPart}");
                             if (recipe.targetsBodyPart)
                             {
-                                //Log.Message("Inside the targetsBodyPart if statement");
                                 foreach (BodyPartRecord item in recipe.Worker.GetPartsToApplyOn(pawn, recipe))
                                 {
-                                    //foreach (BodyPartRecord part in recipe.Worker.GetPartsToApplyOn(pawn, recipe))
-                                    //{
-                                    //    //Log.Message($"----------------- \nBody Part: {part}");
-                                    //}
+
                                     if (recipe.AvailableOnNow(pawn, item))
                                     {
-                                        //string side = item.def.label.ToLower().Contains("left") ? "left"
-                                        //: item.def.label.ToLower().Contains("right") ? "right" : "noSide";
 
-                                        //Log.Message($"Def label: {item.def.label} \n side: {side}\n Def: {item.def}");
 
                                         options.Add((FloatMenuOption)generateSurgeryBillMethod.Invoke(null, new object[]
                                         {
                                         pawn, pawn, recipe, enumerable, report, num++, item
                                         }));
-                                        //Log.Message($"Added menu option for recipe: {recipe.defName}");
+
                                     }
                                 }
                             }
@@ -179,9 +171,31 @@ namespace SimplerSurgery
             }
         }
 
-        [HarmonyPostfix]
-        public static void PrintSurgeryBillMethod()
+        private static bool IsRelatedBodyPart(IEnumerable<BodyPartDef> bodyParts, BodyPartDef targetPart)
         {
+            // Define related body parts logic
+            var relatedParts = new Dictionary<string, List<string>>
+            {
+                { "Hand", new List<string> { "Arm", "Shoulder" } },
+                { "Foot", new List<string> { "Leg", "Hip" } },
+                { "Arm", new List<string> {  "Shoulder" } },
+                { "Leg", new List<string> {  "Hip" } },
+                {"Finger", new List<string>{"Hand", "Shoulder", "Arm"} },
+        // Add more related parts as needed
+            };
+
+            foreach (var bp in bodyParts)
+            {
+                if (relatedParts.TryGetValue(targetPart.defName, out var related))
+                {
+                    if (related.Contains(bp.defName) )
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public static bool IsHediffThatReducesPain(this HediffDef hediffDef)
@@ -209,6 +223,119 @@ namespace SimplerSurgery
         public static IEnumerable<BodyPartRecord> GetPartsToApplyOn(Pawn pawn, RecipeDef recipeDef)
         {
             return recipeDef.Worker.GetPartsToApplyOn(pawn, recipeDef);
+        }
+    }
+
+    [HarmonyPatch]
+    public static class PrintSurgeryBillMethod
+    {
+        [HarmonyPatch(typeof(BillStack), nameof(BillStack.AddBill))]
+        [HarmonyPostfix]
+        public static void BillCreated(Bill bill)
+        {
+
+            if (bill == null)
+            {
+                
+                throw new System.Exception("Medical Bill is null");
+            }
+            Log.Warning($"bill: {bill} ");
+            //Log.Message($"() Bill created: {bill.Label}\n {bill.LabelCap}");
+            if (bill is Bill_Medical medical)
+            {
+                if (medical != null)
+                {
+                    BodyPartRecord partRecord = new BodyPartRecord();
+
+                    try
+                    {
+                        Log.Warning($"Attempting to Expose data");
+                        medical.ExposeData();
+                        Scribe_Values.Look(ref partRecord, "part");
+                        Log.Message($"Exposed Part: {partRecord}");
+                    }
+                    catch (System.Exception ex)
+                    {
+
+                        Log.Error($"Expose data function failed: {ex.Message}");
+                    }
+
+                    Log.Warning("inside if statement: medical not null");
+                    Log.Message($"Medical: {medical}");
+                    Log.Message($"Part: {medical.Part}");
+
+                    try
+                    {
+                        Log.Warning("Accessing recipe.defName property");
+                        Log.Message($"Recipe.defname: {medical.recipe.defName}");
+                    }
+                    catch (System.Exception ex)
+                    {
+
+                        Log.Error($"Error accessing medical.recipe.defName: {ex.Message}");
+                    }
+                    try
+                    {
+                        Log.Warning("Accessing recipe.label property");
+                        Log.Message($"Recipe.defname: {medical.recipe.label}");
+                    }
+                    catch (System.Exception ex)
+                    {
+
+                        Log.Error($"Error accessing recipe.label: {ex.Message}");
+                    }
+
+                    try
+                    {
+                        Log.Warning("Attempting to read properties of the bill");
+
+                        if (medical.Part == null)
+                        {
+                            Log.Warning("medical.Part is null");
+                        }
+                        else {
+                            Log.Message($"Part: {medical.Part}");
+                        }
+
+                    }
+                    catch (System.Exception ex)
+                    {
+
+                        Log.Error($"Error with accessing medical.Part : {ex.Message}");
+                    }
+
+                    try
+                    {
+                        Log.Warning("Trying to access label");
+                        if(medical.Label == null)
+                        {
+                            Log.Warning("medical label is null");
+                        }
+                        else
+                        {
+                            Log.Warning($"label : {medical.Label}");
+                        }
+
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Log.Error($"Error with accessing medical.label : {ex.Message}");
+
+                    }
+
+                    //var targetPart = medical.Part;
+                    //if (targetPart != null) {
+                    //    Log.Message($"targetPart: {targetPart}");
+                    //}
+                    //if ( targetPart.Label != null)
+                    //{
+                    //    Log.Warning($"TargetBody: {targetPart.Label}\n" +
+                    //        $"TargetDefName: {targetPart.def.defName.ToUpper()}\n" +
+                    //        $"isLeft?: {targetPart.def.defName.ToLower().Contains("left")}");
+                    //}
+
+                }
+            }
         }
     }
 }

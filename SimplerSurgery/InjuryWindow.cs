@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using UnityEngine;
 using Verse;
-using UnityEngine;
-using HarmonyLib;
-using RimWorld;
 
 namespace SimplerSurgery
 {
@@ -15,7 +8,8 @@ namespace SimplerSurgery
     {
         private Hediff hediff;
 
-        public Hediff Hediff { get { return hediff; } }
+        public Hediff Hediff
+        { get { return hediff; } }
 
         public InjuryWindow(Hediff hediff)
         {
@@ -36,7 +30,6 @@ namespace SimplerSurgery
                 $"Part: {hediff.Part.LabelCap}");
             Widgets.Label(new Rect(0f, 80f, inRect.width, 30f),
                 $"Severity: {hediff.Severity}");
-
         }
     }
 }
