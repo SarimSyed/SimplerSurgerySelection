@@ -1,8 +1,8 @@
-﻿using HarmonyLib;
-using RimWorld;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using HarmonyLib;
+using RimWorld;
 using Verse;
 
 namespace SimplerSurgery
@@ -22,7 +22,8 @@ namespace SimplerSurgery
     //inherited from mod
     public class ProjectModConfig : Mod
     {
-        public ProjectModConfig(ModContentPack content) : base(content)
+        public ProjectModConfig(ModContentPack content)
+            : base(content)
         {
             Log.Message($"Mod initialized through :Mod method");
             Harmony harmony = new Harmony("rimworld.mod.cssen.projectmod");
@@ -36,10 +37,13 @@ namespace SimplerSurgery
     [HarmonyPatch(typeof(HealthCardUtility))]
     public static class HealthCardUtility_Click_Patch
     {
-
         private static MethodBase TargetMethod()
         {
-            return AccessTools.Method(typeof(HealthCardUtility), "EntryClicked", new[] { typeof(IEnumerable<Hediff>), typeof(Pawn) });
+            return AccessTools.Method(
+                typeof(HealthCardUtility),
+                "EntryClicked",
+                new[] { typeof(IEnumerable<Hediff>), typeof(Pawn) }
+            );
         }
 
         [HarmonyPostfix]
@@ -95,17 +99,19 @@ namespace SimplerSurgery
 
             //Maybe dont filter based on prosthetics and bionic arm and do it afterwards
 
-            IEnumerable<RecipeDef> recipes
-                = pawn.def.AllRecipes.Where(r => (r.targetsBodyPart
-                && r.appliedOnFixedBodyParts.Any(bp =>
-                {
-                    //Logic with bp here
-                    return true;
-                })
-                && (r.appliedOnFixedBodyParts.Contains(hediff.Part.def))
-                || IsRelatedBodyPart(r.appliedOnFixedBodyParts, hediff.Part.def))
-                || r.defName.ToLower().Contains("remove"));
-
+            IEnumerable<RecipeDef> recipes = pawn.def.AllRecipes.Where(r =>
+                (
+                    r.targetsBodyPart
+                    && r.appliedOnFixedBodyParts.Any(bp =>
+                    {
+                        //Logic with bp here
+                        return true;
+                    })
+                    && r.appliedOnFixedBodyParts.Contains(hediff.Part.def)
+                )
+                || IsRelatedBodyPart(r.appliedOnFixedBodyParts, hediff.Part.def)
+                || r.defName.ToLower().Contains("remove")
+            );
 
             Log.Message($"Hediff Part: {hediff.Part.def} \n just the Part: {hediff.Part}");
             if (recipes == null)
@@ -115,19 +121,21 @@ namespace SimplerSurgery
             Log.Warning($"RecipeDef: {recipes.Count()}");
 
             //Exposing a private method to generate surgery bills
-            MethodInfo generateSurgeryBillMethod =
-                typeof(HealthCardUtility).GetMethod("GenerateSurgeryOption", BindingFlags.NonPublic | BindingFlags.Static);
+            MethodInfo generateSurgeryBillMethod = typeof(HealthCardUtility).GetMethod(
+                "GenerateSurgeryOption",
+                BindingFlags.NonPublic | BindingFlags.Static
+            );
             //Empty list of FloatMenuOption, this is the dropdown and each option is an option in the dropdown
             List<FloatMenuOption> options = new List<FloatMenuOption>();
-
 
             if (generateSurgeryBillMethod != null)
             {
                 foreach (RecipeDef recipe in recipes)
                 {
                     Log.Message($"recipe: {recipe.label}");
-                    List<ThingDef> missingIngredients =
-                        recipe.PotentiallyMissingIngredients(null, pawn.Map).ToList();
+                    List<ThingDef> missingIngredients = recipe
+                        .PotentiallyMissingIngredients(null, pawn.Map)
+                        .ToList();
                     AcceptanceReport report = recipe.Worker.AvailableReport(pawn);
 
                     //ACCEPTANCE REPORT ACCEPTED
@@ -135,24 +143,46 @@ namespace SimplerSurgery
                     {
                         //I think this is filtering the recipe thingDef based on whther if its a drug or recipes
                         //used in surgeries
-                        IEnumerable<ThingDef> enumerable = recipe.PotentiallyMissingIngredients(null, pawn.Map);
-                        if (!enumerable.Any((ThingDef x) => x.isTechHediff) && !enumerable.Any((ThingDef x) => x.IsDrug &&
-                        (!enumerable.Any() || !recipe.dontShowIfAnyIngredientMissing)))
+                        IEnumerable<ThingDef> enumerable = recipe.PotentiallyMissingIngredients(
+                            null,
+                            pawn.Map
+                        );
+                        if (
+                            !enumerable.Any((ThingDef x) => x.isTechHediff)
+                            && !enumerable.Any(
+                                (ThingDef x) =>
+                                    x.IsDrug
+                                    && (!enumerable.Any() || !recipe.dontShowIfAnyIngredientMissing)
+                            )
+                        )
                         {
                             if (recipe.targetsBodyPart)
                             {
-                                foreach (BodyPartRecord item in recipe.Worker.GetPartsToApplyOn(pawn, recipe))
+                                foreach (
+                                    BodyPartRecord item in recipe.Worker.GetPartsToApplyOn(
+                                        pawn,
+                                        recipe
+                                    )
+                                )
                                 {
-
                                     if (recipe.AvailableOnNow(pawn, item))
                                     {
-
-
-                                        options.Add((FloatMenuOption)generateSurgeryBillMethod.Invoke(null, new object[]
-                                        {
-                                        pawn, pawn, recipe, enumerable, report, num++, item
-                                        }));
-
+                                        options.Add(
+                                            (FloatMenuOption)
+                                                generateSurgeryBillMethod.Invoke(
+                                                    null,
+                                                    new object[]
+                                                    {
+                                                        pawn,
+                                                        pawn,
+                                                        recipe,
+                                                        enumerable,
+                                                        report,
+                                                        num++,
+                                                        item
+                                                    }
+                                                )
+                                        );
                                     }
                                 }
                             }
@@ -171,24 +201,42 @@ namespace SimplerSurgery
             }
         }
 
-        private static bool IsRelatedBodyPart(IEnumerable<BodyPartDef> bodyParts, BodyPartDef targetPart)
+        private static bool IsRelatedBodyPart(
+            IEnumerable<BodyPartDef> bodyParts,
+            BodyPartDef targetPart
+        )
         {
             // Define related body parts logic
             var relatedParts = new Dictionary<string, List<string>>
             {
-                { "Hand", new List<string> { "Arm", "Shoulder" } },
-                { "Foot", new List<string> { "Leg", "Hip" } },
-                { "Arm", new List<string> {  "Shoulder" } },
-                { "Leg", new List<string> {  "Hip" } },
-                {"Finger", new List<string>{"Hand", "Shoulder", "Arm"} },
-        // Add more related parts as needed
+                {
+                    "Hand",
+                    new List<string> { "Arm", "Shoulder" }
+                },
+                {
+                    "Foot",
+                    new List<string> { "Leg", "Hip" }
+                },
+                {
+                    "Arm",
+                    new List<string> { "Shoulder" }
+                },
+                {
+                    "Leg",
+                    new List<string> { "Hip" }
+                },
+                {
+                    "Finger",
+                    new List<string> { "Hand", "Shoulder", "Arm" }
+                },
+                // Add more related parts as needed
             };
 
             foreach (var bp in bodyParts)
             {
                 if (relatedParts.TryGetValue(targetPart.defName, out var related))
                 {
-                    if (related.Contains(bp.defName) )
+                    if (related.Contains(bp.defName))
                     {
                         return true;
                     }
@@ -196,6 +244,38 @@ namespace SimplerSurgery
             }
 
             return false;
+        }
+        //Helper function returning if part is limb or not
+        private static bool IsLimb(BodyPartRecord part)
+        {
+            // Example check for limbs
+            var limbKeywords = new List<string>
+            {
+                "arm",
+                "leg",
+                "hand",
+                "foot"
+                // Add more limb keywords as needed
+            };
+
+            return limbKeywords.Any(keyword => part.def.label.ToLower().Contains(keyword));
+        }
+
+        //Helper function returning if its an organ or not
+        private static bool IsOrgan(BodyPartRecord part)
+        {
+            // Example check for organs
+            var organKeywords = new List<string>
+            {
+                "heart",
+                "lung",
+                "kidney",
+                "liver",
+                "heart"
+                // Add more organ keywords as needed
+            };
+
+            return organKeywords.Any(keyword => part.def.label.ToLower().Contains(keyword));
         }
 
         public static bool IsHediffThatReducesPain(this HediffDef hediffDef)
@@ -210,8 +290,7 @@ namespace SimplerSurgery
 
         public static bool ReducesPainOnIngestion(this ThingDef def)
         {
-            return
-                def?.ingestible?.outcomeDoers?.OfType<IngestionOutcomeDoer_GiveHediff>()
+            return def?.ingestible?.outcomeDoers?.OfType<IngestionOutcomeDoer_GiveHediff>()
                     .Any(od => od.hediffDef.IsHediffThatReducesPain()) ?? false;
         }
 
@@ -226,6 +305,7 @@ namespace SimplerSurgery
         }
     }
 
+    //There for debugging purpose as well as understanding how surgery bills work
     [HarmonyPatch]
     public static class PrintSurgeryBillMethod
     {
@@ -233,10 +313,8 @@ namespace SimplerSurgery
         [HarmonyPostfix]
         public static void BillCreated(Bill bill)
         {
-
             if (bill == null)
             {
-                
                 throw new System.Exception("Medical Bill is null");
             }
             Log.Warning($"bill: {bill} ");
@@ -256,7 +334,6 @@ namespace SimplerSurgery
                     }
                     catch (System.Exception ex)
                     {
-
                         Log.Error($"Expose data function failed: {ex.Message}");
                     }
 
@@ -271,7 +348,6 @@ namespace SimplerSurgery
                     }
                     catch (System.Exception ex)
                     {
-
                         Log.Error($"Error accessing medical.recipe.defName: {ex.Message}");
                     }
                     try
@@ -281,7 +357,6 @@ namespace SimplerSurgery
                     }
                     catch (System.Exception ex)
                     {
-
                         Log.Error($"Error accessing recipe.label: {ex.Message}");
                     }
 
@@ -293,21 +368,20 @@ namespace SimplerSurgery
                         {
                             Log.Warning("medical.Part is null");
                         }
-                        else {
+                        else
+                        {
                             Log.Message($"Part: {medical.Part}");
                         }
-
                     }
                     catch (System.Exception ex)
                     {
-
                         Log.Error($"Error with accessing medical.Part : {ex.Message}");
                     }
 
                     try
                     {
                         Log.Warning("Trying to access label");
-                        if(medical.Label == null)
+                        if (medical.Label == null)
                         {
                             Log.Warning("medical label is null");
                         }
@@ -315,12 +389,10 @@ namespace SimplerSurgery
                         {
                             Log.Warning($"label : {medical.Label}");
                         }
-
                     }
                     catch (System.Exception ex)
                     {
                         Log.Error($"Error with accessing medical.label : {ex.Message}");
-
                     }
 
                     //var targetPart = medical.Part;
@@ -333,7 +405,6 @@ namespace SimplerSurgery
                     //        $"TargetDefName: {targetPart.def.defName.ToUpper()}\n" +
                     //        $"isLeft?: {targetPart.def.defName.ToLower().Contains("left")}");
                     //}
-
                 }
             }
         }
