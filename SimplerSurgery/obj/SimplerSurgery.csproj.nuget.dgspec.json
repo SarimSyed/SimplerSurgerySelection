@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj": {}
+    "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj": {}
   },
   "projects": {
-    "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj": {
+    "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj",
+        "projectUniqueName": "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj",
         "projectName": "SimplerSurgery",
-        "projectPath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj",
+        "projectPath": "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj",
         "packagesPath": "C:\\Users\\asari\\.nuget\\packages\\",
-        "outputPath": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RimWorld\\Mods\\SimplerSurgery\\SimplerSurgery\\obj\\",
+        "outputPath": "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\obj\\",
         "projectStyle": "PackageReference",
         "skipContentFileWrite": true,
         "configFilePaths": [
