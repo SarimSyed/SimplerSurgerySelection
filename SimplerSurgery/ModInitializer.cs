@@ -4,6 +4,7 @@ using System.Reflection;
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using System;
 
 namespace SimplerSurgery
 {
@@ -40,6 +41,8 @@ namespace SimplerSurgery
     [HarmonyPatch(typeof(HealthCardUtility))]
     public static class HealthCardUtility_Click_Patch
     {
+        const char  SPLIT_MATCHER = ' ';
+
         private static MethodBase TargetMethod()
         {
             return AccessTools.Method(
@@ -72,6 +75,7 @@ namespace SimplerSurgery
         //This was just a learning experience so I should focus more on the formatting in the future
         private static void InvokeGenerateSurgeryOptions(Pawn pawn, Hediff hediff)
         {
+
             //Log.Warning($"All hediff info: {hediff}");
             if (hediff == null)
             {
@@ -93,7 +97,9 @@ namespace SimplerSurgery
                 Log.Message($"part.def is null: {hediff.Part.def}");
                 return;
             }
-            LogHediffDetails(hediff);
+
+            //This should have an array with 2 elements, the side and the part. It will just be 1 if its something like a kidney
+            string[] partDetails = hediff.Label.ToLower().Split(SPLIT_MATCHER);
             int num = 0;
             //Getting a list of all recipes and filtering it based on the body parts
 
@@ -105,11 +111,8 @@ namespace SimplerSurgery
                     && r.appliedOnFixedBodyParts.Contains(hediff.Part.def)
                 )
                 || (IsRelatedBodyPart(r.appliedOnFixedBodyParts, hediff.Part.def)
-                || (r.defName.ToLower().Contains("remove") 
-                && r.defName.ToLower().Contains("install")))
-                && ( //Rewrite logic here so that organs are not filtered out.
-                r.appliedOnFixedBodyPartGroups.Any(bp => IsLimb(bp))
-                || r.appliedOnFixedBodyPartGroups.Any(g => IsOrgan(g))
+                
+
 
                 )
             );
@@ -159,7 +162,7 @@ namespace SimplerSurgery
                             && !enumerable.Any(
                                 (ThingDef x) =>
                                     x.IsDrug
-                                    && (!enumerable.Any() || !recipe.dontShowIfAnyIngredientMissing)
+                                    && (!enumerable.Any() || !recipe.dontShowIfAnyIngredientMissing)//Is this whats filtering the operations that arent available
                             )
                         )
                         {
@@ -175,7 +178,21 @@ namespace SimplerSurgery
                                 {
                                     if (recipe.AvailableOnNow(pawn, item))
                                     {
-                                        options.Add(
+
+
+
+                                        //item keeps record of part similar to hediff.Part
+                                        var hediffPart = hediff.Part.Label.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                        string[] currentPart = item.Label.ToLower().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                        if (currentPart.Count() == 2)
+                                        {
+                                            //This means that its a part with a side
+                                            if (currentPart[0] != hediffPart[0])
+                                            {
+                                                continue;
+                                            }
+                                        }
+                                            options.Add(
                                             (FloatMenuOption)
                                                 generateSurgeryBillMethod.Invoke(
                                                     null,
@@ -191,6 +208,9 @@ namespace SimplerSurgery
                                                     }
                                                 )
                                         );
+
+
+                                        
                                     }
                                 }
                             }
@@ -211,61 +231,9 @@ namespace SimplerSurgery
         #endregion
 
         
-        private static void LogHediffDetails(Hediff hediff)
-        {
-            string position = string.Empty;
-
-            if (hediff == null)
-            {
-                Log.Message("Hediff is null.");
-                return;
-            }
-
-            BodyPartRecord part = hediff.Part;
-            if (part == null)
-            {
-                Log.Message("BodyPartRecord is null.");
-                return;
-            }
-
-            try
-            {
-
-                // Save the literal string inside the position variable before logging
-                position = $"Hediff: {hediff.def.label} ({hediff.def.defName})";
-                Log.Message(position);
-
-                position = $"Body Part: {part.Label} ({part.def.defName})";
-                Log.Message(position);
-
-                position = $"Part Index: {part.Index}";
-                Log.Message(position);
-
-                position = $"Part Coverage: {part.coverage}";
-                Log.Message(position);
-
-                position = $"Part Depth: {part.depth}";
-                Log.Message(position);
-
-                position = $"Part Height: {part.height}";
-                Log.Message(position);
-
-                position = $"Part Parent: {part.parent?.Label ?? "None"}";
-                Log.Message(position);
-
-                position = $"Part Groups: {string.Join(", ", part.groups.Select(g => g.defName))}";
-                Log.Message(position);
-
-            }
-            catch (System.Exception ex)
-            {
-
-                Log.Error($"Unable to read one of the hediff values at: {position} \nError:{ex.Message}");
-            }
-
-
-        }
+       
         #region Helper functions
+        
         private static bool IsRelatedBodyPart(
             IEnumerable<BodyPartDef> bodyParts,
             BodyPartDef targetPart
@@ -373,109 +341,5 @@ namespace SimplerSurgery
         #endregion
     }
 
-    //There for debugging purpose as well as understanding how surgery bills work
-    //REMEMBER TO DELETE BEFORE PUBLISHING
-    [HarmonyPatch]
-    public static class PrintSurgeryBillMethod
-    {
-        [HarmonyPatch(typeof(BillStack), nameof(BillStack.AddBill))]
-        [HarmonyPostfix]
-        public static void BillCreated(Bill bill)
-        {
-            if (bill == null)
-            {
-                throw new System.Exception("Medical Bill is null");
-            }
-            Log.Warning($"bill: {bill} ");
-            //Log.Message($"() Bill created: {bill.Label}\n {bill.LabelCap}");
-            if (bill is Bill_Medical medical)
-            {
-                if (medical != null)
-                {
-                    BodyPartRecord partRecord = new BodyPartRecord();
-
-                    try
-                    {
-                        Log.Warning($"Attempting to Expose data");
-                        medical.ExposeData();
-                        Scribe_Values.Look(ref partRecord, "part");
-                        Log.Message($"Exposed Part: {partRecord}");
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Log.Error($"Expose data function failed: {ex.Message}");
-                    }
-
-                    Log.Warning("inside if statement: medical not null");
-                    Log.Message($"Medical: {medical}");
-                    Log.Message($"Part: {medical.Part}");
-
-                    try
-                    {
-                        Log.Warning("Accessing recipe.defName property");
-                        Log.Message($"Recipe.defname: {medical.recipe.defName}");
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Log.Error($"Error accessing medical.recipe.defName: {ex.Message}");
-                    }
-                    try
-                    {
-                        Log.Warning("Accessing recipe.label property");
-                        Log.Message($"Recipe.defname: {medical.recipe.label}");
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Log.Error($"Error accessing recipe.label: {ex.Message}");
-                    }
-
-                    try
-                    {
-                        Log.Warning("Attempting to read properties of the bill");
-
-                        if (medical.Part == null)
-                        {
-                            Log.Warning("medical.Part is null");
-                        }
-                        else
-                        {
-                            Log.Message($"Part: {medical.Part}");
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Log.Error($"Error with accessing medical.Part : {ex.Message}");
-                    }
-
-                    try
-                    {
-                        Log.Warning("Trying to access label");
-                        if (medical.Label == null)
-                        {
-                            Log.Warning("medical label is null");
-                        }
-                        else
-                        {
-                            Log.Warning($"label : {medical.Label}");
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Log.Error($"Error with accessing medical.label : {ex.Message}");
-                    }
-
-                    //var targetPart = medical.Part;
-                    //if (targetPart != null) {
-                    //    Log.Message($"targetPart: {targetPart}");
-                    //}
-                    //if ( targetPart.Label != null)
-                    //{
-                    //    Log.Warning($"TargetBody: {targetPart.Label}\n" +
-                    //        $"TargetDefName: {targetPart.def.defName.ToUpper()}\n" +
-                    //        $"isLeft?: {targetPart.def.defName.ToLower().Contains("left")}");
-                    //}
-                }
-            }
-        }
-    }
+    
 }
