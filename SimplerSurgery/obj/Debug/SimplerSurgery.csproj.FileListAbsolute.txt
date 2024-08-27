@@ -1,6 +1,0 @@
-E:\Games\RimworldBackup\RimWorld_Debug\Mods\SimplerSurgery\Assemblies\SimplerSurgery.dll
-E:\Games\RimworldBackup\RimWorld_Debug\Mods\SimplerSurgery\Assemblies\SimplerSurgery.pdb
-E:\Games\RimworldBackup\RimWorld_Debug\Mods\SimplerSurgery\SimplerSurgery\obj\Debug\SimplerSurgery.csproj.AssemblyReference.cache
-E:\Games\RimworldBackup\RimWorld_Debug\Mods\SimplerSurgery\SimplerSurgery\obj\Debug\SimplerSurgery.csproj.CoreCompileInputs.cache
-E:\Games\RimworldBackup\RimWorld_Debug\Mods\SimplerSurgery\SimplerSurgery\obj\Debug\SimplerSurgery.dll
-E:\Games\RimworldBackup\RimWorld_Debug\Mods\SimplerSurgery\SimplerSurgery\obj\Debug\SimplerSurgery.pdb

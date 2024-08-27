@@ -1,2 +1,3 @@
 .vs
-.\SimplerSurgery\bin\
+./SimplerSurgery/bin/
+./SimplerSurgery/obj/
