@@ -5,6 +5,8 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using System;
+using Steamworks;
+using UnityEngine.Analytics;
 
 namespace SimplerSurgery
 {
@@ -107,13 +109,14 @@ namespace SimplerSurgery
 
             IEnumerable<RecipeDef> recipes = pawn.def.AllRecipes.Where(r =>
                 (
-                    r.targetsBodyPart
+                 r.AvailableNow
+                    &&
+                    (r.targetsBodyPart
                     && r.appliedOnFixedBodyParts.Contains(hediff.Part.def)
-                )
-                || (IsRelatedBodyPart(r.appliedOnFixedBodyParts, hediff.Part.def)
-                
-
-
+                ) )
+                ||
+                (
+                    GetParentPartRelation(r.appliedOnFixedBodyParts, hediff.Part.parent)
                 )
             );
 
@@ -180,24 +183,50 @@ namespace SimplerSurgery
                                     {
 
 
-
-                                        //item keeps record of part similar to hediff.Part
-                                        var hediffPart = hediff.Part.Label.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                                        string[] currentPart = item.Label.ToLower().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                                        if (currentPart.Count() == 2)
+                                        try
                                         {
-                                            //This means that its a part with a side
-                                            if (currentPart[0] != hediffPart[0])
+                                            //FILTERING HERE GIVES MORE CONTROL
+
+                                            //item keeps record of part similar to hediff.Part
+                                            var hediffPart = hediff.Part.Label.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                            string[] currentPart = item.Label.ToLower().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                            if (currentPart.Count() == 2)
+                                            {
+                                                //This means that its a part with a side
+                                                if (currentPart[0] != hediffPart[0])
+                                                {
+                                                    continue;
+                                                }
+
+
+                                            }
+                                            if (currentPart.Count() == 3)
+                                            {
+                                                if (currentPart[0] != hediffPart[0])
+                                                {
+                                                    continue;
+                                                }
+                                            }
+                                            if (item.parent.Label == null)
                                             {
                                                 continue;
                                             }
-                                        }
+                                            if (item.parent.Label != hediff.Part.parent.Label)
+                                            {
+
+                                                continue;
+
+                                            }
+                                            if ((item.parent.Label == "head" && item.Label != hediff.Part.Label) || (item.parent.Label == "torso" && item.Label != hediff.Part.Label))
+                                            {
+                                                continue;
+                                            }
                                             options.Add(
-                                            (FloatMenuOption)
-                                                generateSurgeryBillMethod.Invoke(
-                                                    null,
-                                                    new object[]
-                                                    {
+                                                (FloatMenuOption)
+                                                    generateSurgeryBillMethod.Invoke(
+                                                        null,
+                                                        new object[]
+                                                        {
                                                         pawn,
                                                         pawn,
                                                         recipe,
@@ -205,15 +234,27 @@ namespace SimplerSurgery
                                                         report,
                                                         num++,
                                                         item
-                                                    }
-                                                )
-                                        );
+                                                        }
+                                                    )
+                                            );
 
 
+
+                                        }
+                                        catch (Exception ex) 
+                                        {
+                                            throw new Exception($"Error thrown in option filtering. \n" +
+                                                $"{item.parent.Label} | Error: {ex.Message}");
                                         
-                                    }
+                                        }
+                                }
                                 }
                             }
+
+                            //End of Adding?
+
+
+
                         }
                     }
                 }
@@ -234,6 +275,30 @@ namespace SimplerSurgery
        
         #region Helper functions
         
+        //Might not be doing anything, CHECK LATER
+        private static bool GetParentPartRelation(
+            IEnumerable<BodyPartDef> bodyParts,
+            BodyPartRecord parent
+            )
+        {
+
+            if (parent.Label != null && IgnoreTorsoAndHead(parent.Label))
+            {
+                //Theres no damn filtering logic
+
+                //swapped to ! because its somewhat better to exit the method sooner than later
+                return true;
+            }
+            Log.Warning("Torso or Head");
+            return false;
+        }
+        private static bool IgnoreTorsoAndHead( string parent)
+        {
+            return !parent.Contains("torso") || !parent.Contains("head");
+        }
+
+
+
         private static bool IsRelatedBodyPart(
             IEnumerable<BodyPartDef> bodyParts,
             BodyPartDef targetPart
@@ -244,7 +309,7 @@ namespace SimplerSurgery
             {
                 {
                     "Hand",
-                    new List<string> { "Arm", "Shoulder" }
+                    new List<string> { "Arm", "Shoulder", "Radius", "Humerous"  }
                 },
                 {
                     "Foot",
@@ -275,6 +340,8 @@ namespace SimplerSurgery
                         Log.Warning($"Inside IsRelatedBodyPart: {bp.defName} || {bp.label}");
                         return true;
                     }
+
+                    
                 }
             }
 
@@ -296,22 +363,7 @@ namespace SimplerSurgery
             return limbKeywords.Any(keyword => part.label.ToLower().Contains(keyword));
         }
 
-        //Helper function returning if its an organ or not
-        private static bool IsOrgan(BodyPartGroupDef part)
-        {
-            // Example check for organs
-            var organKeywords = new List<string>
-            {
-                "heart",
-                "lung",
-                "kidney",
-                "liver",
-                "heart"
-                // Add more organ keywords as needed
-            };
-
-            return organKeywords.Any(keyword => part.label.ToLower().Contains(keyword));
-        }
+ 
 
         public static bool IsHediffThatReducesPain(this HediffDef hediffDef)
         {
@@ -338,8 +390,29 @@ namespace SimplerSurgery
         {
             return recipeDef.Worker.GetPartsToApplyOn(pawn, recipeDef);
         }
+        public static bool IsDigit()
+        {
+
+
+            return true;
+        }
+
+        #endregion
+        #region shortcut functions
+        public static void Write(string message)
+        {
+            Log.Message(message);
+        }
+        public static void Error(string message)
+        {
+            Log.Error(message);
+        }
+        public static void Warning(string message)
+        {
+            Log.Warning(message);
+        }
         #endregion
     }
 
-    
+
 }

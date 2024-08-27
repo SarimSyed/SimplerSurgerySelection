@@ -3,7 +3,7 @@
     <name>Simple Surgery Shortcut</name>
     <author>Tallermage</author>
     <packageId>tallermage.simplesurgery</packageId>
-    <description>Injuries can be clicked and the available surgeries for that body part will be displayed. I often found myself going back and forth between the operation bill selection dropdown and the injury screen because I didn't want to install a prosthetic or bionic body part to the wrong leg/arm/eye. This should make it easier to treat the part that's actually damaged.</description>
+    <description> Missing body parts can be clicked on and if the a replacement part is available the option to create a bill for that surgery will be available through a dropdown. The aim is to streamline the way surgery bill in a more intuitive way</description>
     <supportedVersions>
 		<li>1.5</li>
     </supportedVersions>
