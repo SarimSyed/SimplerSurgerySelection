@@ -1,12 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 using RimWorld;
-using Verse;
-using System;
 using Steamworks;
 using UnityEngine.Analytics;
+using Verse;
 
 namespace SimplerSurgery
 {
@@ -43,7 +43,7 @@ namespace SimplerSurgery
     [HarmonyPatch(typeof(HealthCardUtility))]
     public static class HealthCardUtility_Click_Patch
     {
-        const char  SPLIT_MATCHER = ' ';
+        const char SPLIT_MATCHER = ' ';
 
         private static MethodBase TargetMethod()
         {
@@ -77,7 +77,6 @@ namespace SimplerSurgery
         //This was just a learning experience so I should focus more on the formatting in the future
         private static void InvokeGenerateSurgeryOptions(Pawn pawn, Hediff hediff)
         {
-
             //Log.Warning($"All hediff info: {hediff}");
             if (hediff == null)
             {
@@ -107,18 +106,43 @@ namespace SimplerSurgery
 
             //Maybe dont filter based on prosthetics and bionic arm and do it afterwards
 
+
             IEnumerable<RecipeDef> recipes = pawn.def.AllRecipes.Where(r =>
-                (
-                 r.AvailableNow
-                    &&
-                    (r.targetsBodyPart
-                    && r.appliedOnFixedBodyParts.Contains(hediff.Part.def)
-                ) )
-                ||
-                (
-                    GetParentPartRelation(r.appliedOnFixedBodyParts, hediff.Part.parent)
-                )
-            );
+            {
+                // Get all ancestors of the current part
+                List<BodyPartRecord> allAncestors = GetAllAncestors(hediff.Part);
+
+                // Check if the recipe applies to the current part or any of its ancestors
+                bool appliesToCurrentOrAncestors =
+                    r.appliedOnFixedBodyParts.Contains(hediff.Part.def)
+                    || allAncestors.Any(ancestor => r.appliedOnFixedBodyParts.Contains(ancestor.def));
+
+                return r.AvailableNow
+                    && r.targetsBodyPart
+                    && (appliesToCurrentOrAncestors || r.defName == "RemoveBodyPart");
+            });
+
+            Log.Message($"Hediff Part: {hediff.Part.def} \n just the Part: {hediff.Part}");
+            if (recipes == null)
+            {
+                return;
+            }
+            Log.Warning($"RecipeDef: {recipes.Count()}");
+
+            //Is it getting filtered out here?
+            //IEnumerable<RecipeDef> recipes = pawn.def.AllRecipes.Where(r =>
+            //    (
+            //     r.AvailableNow
+            //        &&
+            //        (r.targetsBodyPart
+            //        && (r.appliedOnFixedBodyParts.Contains(hediff.Part.def) ||
+            //            (hediff.Part.parent != null &&
+            //             !IsTorsoOrHead(hediff.Part.parent.def) &&
+            //            r.appliedOnFixedBodyParts.Contains(hediff.Part.parent.def))
+            //        ) //This is filtering the parent surgeries inadvertently
+            //    ) )
+
+            //);
 
             Log.Message($"Hediff Part: {hediff.Part.def} \n just the Part: {hediff.Part}");
             if (recipes == null)
@@ -143,7 +167,9 @@ namespace SimplerSurgery
 
                     for (int i = 0; i < recipe.appliedOnFixedBodyPartGroups.Count(); i++)
                     {
-                        Log.Message($"-->   aplliedOnGroup: {recipe.appliedOnFixedBodyPartGroups[i]}");
+                        Log.Message(
+                            $"-->   aplliedOnGroup: {recipe.appliedOnFixedBodyPartGroups[i]}"
+                        );
                     }
 
                     List<ThingDef> missingIngredients = recipe
@@ -165,12 +191,14 @@ namespace SimplerSurgery
                             && !enumerable.Any(
                                 (ThingDef x) =>
                                     x.IsDrug
-                                    && (!enumerable.Any() || !recipe.dontShowIfAnyIngredientMissing)//Is this whats filtering the operations that arent available
+                                    && (!enumerable.Any() || !recipe.dontShowIfAnyIngredientMissing) //Is this whats filtering the operations that arent available?
                             )
                         )
                         {
                             if (recipe.targetsBodyPart)
                             {
+                                IEnumerable<BodyPartDef> parents = GetAllAncestors(hediff);
+
                                 foreach (
                                     //Maybe add a check for 'left' or 'right' here
                                     BodyPartRecord item in recipe.Worker.GetPartsToApplyOn(
@@ -181,80 +209,152 @@ namespace SimplerSurgery
                                 {
                                     if (recipe.AvailableOnNow(pawn, item))
                                     {
-
+                                        bool isCompatible = recipe.CompatibleWithHediff(hediff.def);
 
                                         try
                                         {
                                             //FILTERING HERE GIVES MORE CONTROL
 
                                             //item keeps record of part similar to hediff.Part
-                                            var hediffPart = hediff.Part.Label.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                                            string[] currentPart = item.Label.ToLower().Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                            var hediffPart = hediff.Part.Label.Split(
+                                                new char[] { ' ' },
+                                                StringSplitOptions.RemoveEmptyEntries
+                                            );
+                                            string[] currentPart = item
+                                                .Label.ToLower()
+                                                .Split(
+                                                    new char[] { ' ' },
+                                                    StringSplitOptions.RemoveEmptyEntries
+                                                );
                                             if (currentPart.Count() == 2)
                                             {
-                                                //This means that its a part with a side
+                                                //This means that its a part with the same side
                                                 if (currentPart[0] != hediffPart[0])
                                                 {
                                                     continue;
                                                 }
-
-
                                             }
-                                            if (currentPart.Count() == 3)
+
+                                            //if (parents.Count() >= 2)
+                                            //{
+                                            //    if (
+                                            //        item.parent.Label != null
+                                            //        && item.parent.Label == "torso"
+                                            //    )
+                                            //    {
+                                            //        continue;
+                                            //    }
+                                            //}
+                                            IEnumerable<BodyPartDef> filteredList = parents
+                                                .Where(p => true
+                                                    //!p.defName.Equals(
+                                                    //    "Torso",
+                                                    //    StringComparison.OrdinalIgnoreCase
+                                                    //)
+                                                )
+                                                .ToList();
+                                            foreach (BodyPartDef part in filteredList)
                                             {
-                                                if (currentPart[0] != hediffPart[0])
+                                                if (item.parent.LabelShort == part.LabelShort )
                                                 {
-                                                    continue;
+                                                    options.Add(
+                                                        (FloatMenuOption)
+                                                            generateSurgeryBillMethod.Invoke(
+                                                                null,
+                                                                new object[]
+                                                                {
+                                                                    pawn,
+                                                                    pawn,
+                                                                    recipe,
+                                                                    enumerable,
+                                                                    report,
+                                                                    num++,
+                                                                    item
+                                                                }
+                                                            )
+                                                    );
                                                 }
+
+                                                Write($"bodypartdef label: {part.labelShort}");
                                             }
+                                            //if (parents.Count() >= 2)
+                                            //{
+                                            //    if (
+                                            //        filteredList.Any(p =>
+                                            //            p.labelShort == item.parent.Label
+                                            //        )
+                                            //    )
+                                            //    {
+                                            //        options.Add(
+                                            //            (FloatMenuOption)
+                                            //                generateSurgeryBillMethod.Invoke(
+                                            //                    null,
+                                            //                    new object[]
+                                            //                    {
+                                            //                        pawn,
+                                            //                        pawn,
+                                            //                        recipe,
+                                            //                        enumerable,
+                                            //                        report,
+                                            //                        num++,
+                                            //                        item
+                                            //                    }
+                                            //                )
+                                            //        );
+                                            //        continue;
+                                            //    }
+                                            //}
+
                                             if (item.parent.Label == null)
                                             {
                                                 continue;
                                             }
-                                            if (item.parent.Label != hediff.Part.parent.Label)
-                                            {
-
-                                                continue;
-
-                                            }
-                                            if ((item.parent.Label == "head" && item.Label != hediff.Part.Label) || (item.parent.Label == "torso" && item.Label != hediff.Part.Label))
-                                            {
-                                                continue;
-                                            }
-                                            options.Add(
-                                                (FloatMenuOption)
-                                                    generateSurgeryBillMethod.Invoke(
-                                                        null,
-                                                        new object[]
-                                                        {
-                                                        pawn,
-                                                        pawn,
-                                                        recipe,
-                                                        enumerable,
-                                                        report,
-                                                        num++,
-                                                        item
-                                                        }
-                                                    )
-                                            );
 
 
+                                            //If parent of hediff and current part isnt the same continue
+                                            //if (item.parent.Label != hediff.Part.parent.Label)
+                                            //{
+                                            //    string[] keywords = { "hand", "leg", "hand", "foot" };
 
+                                            //    //BELOW IS THE PROBLEM
+                                            //    if (!item.parent.Label.Contains("hand") || !item.parent.Label.Contains("foot") || !item.parent.Label.Contains("arm") || !item.parent.Label.Contains("leg"))
+                                            //    {
+                                            //        //If the parent is NOT hand or foot which will be almost always true
+                                            //        continue;
+                                            //    }
+
+                                            //}
+
+
+                                            //options.Add(
+                                            //    (FloatMenuOption)
+                                            //        generateSurgeryBillMethod.Invoke(
+                                            //            null,
+                                            //            new object[]
+                                            //            {
+                                            //                pawn,
+                                            //                pawn,
+                                            //                recipe,
+                                            //                enumerable,
+                                            //                report,
+                                            //                num++,
+                                            //                item
+                                            //            }
+                                            //        )
+                                            //);
                                         }
-                                        catch (Exception ex) 
+                                        catch (Exception ex)
                                         {
-                                            throw new Exception($"Error thrown in option filtering. \n" +
-                                                $"{item.parent.Label} | Error: {ex.Message}");
-                                        
+                                            throw new Exception(
+                                                $"Error thrown in option filtering. \n"
+                                                    + $"{item.parent.Label} | Error: {ex.Message}"
+                                            );
                                         }
-                                }
+                                    }
                                 }
                             }
 
                             //End of Adding?
-
-
-
                         }
                     }
                 }
@@ -269,19 +369,34 @@ namespace SimplerSurgery
                 Log.Error("GenerateSurgeryOptions method not found");
             }
         }
-        #endregion
+    #endregion
 
-        
-       
+
+
         #region Helper functions
-        
+
+        //Recursive funtion that gets all the parent parts
+
+        private static List<BodyPartRecord> GetAllAncestors(this BodyPartRecord part)
+        {
+            List<BodyPartRecord> ancestors = new List<BodyPartRecord>();
+            BodyPartRecord current = part.parent;
+
+            while (current != null)
+            {
+                ancestors.Add(current);
+                current = current.parent;
+            }
+
+            return ancestors;
+        }
+
         //Might not be doing anything, CHECK LATER
         private static bool GetParentPartRelation(
             IEnumerable<BodyPartDef> bodyParts,
             BodyPartRecord parent
-            )
+        )
         {
-
             if (parent.Label != null && IgnoreTorsoAndHead(parent.Label))
             {
                 //Theres no damn filtering logic
@@ -292,12 +407,11 @@ namespace SimplerSurgery
             Log.Warning("Torso or Head");
             return false;
         }
-        private static bool IgnoreTorsoAndHead( string parent)
+
+        private static bool IgnoreTorsoAndHead(string parent)
         {
             return !parent.Contains("torso") || !parent.Contains("head");
         }
-
-
 
         private static bool IsRelatedBodyPart(
             IEnumerable<BodyPartDef> bodyParts,
@@ -309,7 +423,7 @@ namespace SimplerSurgery
             {
                 {
                     "Hand",
-                    new List<string> { "Arm", "Shoulder", "Radius", "Humerous"  }
+                    new List<string> { "Arm", "Shoulder", "Radius", "Humerous" }
                 },
                 {
                     "Foot",
@@ -340,13 +454,18 @@ namespace SimplerSurgery
                         Log.Warning($"Inside IsRelatedBodyPart: {bp.defName} || {bp.label}");
                         return true;
                     }
-
-                    
                 }
             }
 
             return false;
         }
+
+        // Helper method to check if a part is torso or head
+        private static bool IsTorsoOrHead(BodyPartDef partDef)
+        {
+            return partDef.defName == "torso" || partDef.defName == "head";
+        }
+
         //Helper function returning if part is limb or not
         private static bool IsLimb(BodyPartGroupDef part)
         {
@@ -359,11 +478,9 @@ namespace SimplerSurgery
                 "foot"
                 // Add more limb keywords as needed
             };
-            
+
             return limbKeywords.Any(keyword => part.label.ToLower().Contains(keyword));
         }
-
- 
 
         public static bool IsHediffThatReducesPain(this HediffDef hediffDef)
         {
@@ -390,10 +507,9 @@ namespace SimplerSurgery
         {
             return recipeDef.Worker.GetPartsToApplyOn(pawn, recipeDef);
         }
+
         public static bool IsDigit()
         {
-
-
             return true;
         }
 
@@ -403,16 +519,16 @@ namespace SimplerSurgery
         {
             Log.Message(message);
         }
+
         public static void Error(string message)
         {
             Log.Error(message);
         }
+
         public static void Warning(string message)
         {
             Log.Warning(message);
         }
         #endregion
     }
-
-
 }
