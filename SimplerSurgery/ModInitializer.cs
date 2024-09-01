@@ -115,7 +115,9 @@ namespace SimplerSurgery
                 // Check if the recipe applies to the current part or any of its ancestors
                 bool appliesToCurrentOrAncestors =
                     r.appliedOnFixedBodyParts.Contains(hediff.Part.def)
-                    || allAncestors.Any(ancestor => r.appliedOnFixedBodyParts.Contains(ancestor.def));
+                    || allAncestors.Any(ancestor =>
+                        r.appliedOnFixedBodyParts.Contains(ancestor.def)
+                    );
 
                 return r.AvailableNow
                     && r.targetsBodyPart
@@ -197,7 +199,7 @@ namespace SimplerSurgery
                         {
                             if (recipe.targetsBodyPart)
                             {
-                                IEnumerable<BodyPartDef> parents = GetAllAncestors(hediff);
+                                IEnumerable<BodyPartRecord> parents = GetAllAncestors(hediff.Part);
 
                                 foreach (
                                     //Maybe add a check for 'left' or 'right' here
@@ -231,6 +233,7 @@ namespace SimplerSurgery
                                                 //This means that its a part with the same side
                                                 if (currentPart[0] != hediffPart[0])
                                                 {
+                                                    //.Count ancestors and if its over a certain amount then it is a limb, except maybe shoulder would have trouble
                                                     continue;
                                                 }
                                             }
@@ -245,38 +248,76 @@ namespace SimplerSurgery
                                             //        continue;
                                             //    }
                                             //}
-                                            IEnumerable<BodyPartDef> filteredList = parents
-                                                .Where(p => true
-                                                    //!p.defName.Equals(
-                                                    //    "Torso",
-                                                    //    StringComparison.OrdinalIgnoreCase
-                                                    //)
+                                            IEnumerable<BodyPartRecord> filteredList = parents
+                                                .Where(p =>
+                                                    true
+                                                //!p.defName.Equals(
+                                                //    "Torso",
+                                                //    StringComparison.OrdinalIgnoreCase
+                                                //)
                                                 )
                                                 .ToList();
-                                            foreach (BodyPartDef part in filteredList)
-                                            {
-                                                if (item.parent.LabelShort == part.LabelShort )
-                                                {
-                                                    options.Add(
-                                                        (FloatMenuOption)
-                                                            generateSurgeryBillMethod.Invoke(
-                                                                null,
-                                                                new object[]
-                                                                {
-                                                                    pawn,
-                                                                    pawn,
-                                                                    recipe,
-                                                                    enumerable,
-                                                                    report,
-                                                                    num++,
-                                                                    item
-                                                                }
-                                                            )
-                                                    );
-                                                }
+                                            int counter = 0;
+                                            int totalItems = filteredList.Count();
+                                            //foreach (BodyPartRecord part in filteredList)
+                                            //{
+                                            //    counter++;
+                                            //    if (totalItems >= 2)
+                                            //    {
+                                            //        if (item.parent == null)
+                                            //        {
+                                            //            continue;
+                                            //        }
+                                            //        if (true  )
+                                            //        {
+                                            //            if(item.depth.ToString() == "Outside")
+                                            //                options.Add(
+                                            //                    (FloatMenuOption)
+                                            //                        generateSurgeryBillMethod.Invoke(
+                                            //                            null,
+                                            //                            new object[]
+                                            //                            {
+                                            //                                pawn,
+                                            //                                pawn,
+                                            //                                recipe,
+                                            //                                enumerable,
+                                            //                                report,
+                                            //                                num++,
+                                            //                                item
+                                            //                            }
+                                            //                        )
+                                            //                );
 
-                                                Write($"bodypartdef label: {part.labelShort}");
-                                            }
+
+
+                                            //        }
+                                            //    }
+                                            //    //If statement for torso potentially
+                                            //    if (totalItems == 1)
+                                            //    {
+                                            //        if(hediff.Part.Label == item.LabelCap)
+                                            //        {
+                                            //            options.Add(
+                                            //            (FloatMenuOption)
+                                            //                generateSurgeryBillMethod.Invoke(
+                                            //                    null,
+                                            //                    new object[]
+                                            //                    {
+                                            //                        pawn,
+                                            //                        pawn,
+                                            //                        recipe,
+                                            //                        enumerable,
+                                            //                        report,
+                                            //                        num++,
+                                            //                        item
+                                            //                    }
+                                            //                )
+                                            //        );
+                                            //        }
+                                            //    }
+
+                                            //    Write($"bodypartdef label: {part.Label}");
+                                            //}
                                             //if (parents.Count() >= 2)
                                             //{
                                             //    if (
@@ -305,43 +346,35 @@ namespace SimplerSurgery
                                             //    }
                                             //}
 
-                                            if (item.parent.Label == null)
-                                            {
-                                                continue;
-                                            }
 
 
                                             //If parent of hediff and current part isnt the same continue
-                                            //if (item.parent.Label != hediff.Part.parent.Label)
-                                            //{
-                                            //    string[] keywords = { "hand", "leg", "hand", "foot" };
 
-                                            //    //BELOW IS THE PROBLEM
-                                            //    if (!item.parent.Label.Contains("hand") || !item.parent.Label.Contains("foot") || !item.parent.Label.Contains("arm") || !item.parent.Label.Contains("leg"))
-                                            //    {
-                                            //        //If the parent is NOT hand or foot which will be almost always true
-                                            //        continue;
-                                            //    }
+                                            if (totalItems >= 2)
+                                            {
+                                                if (item.depth.ToString() != "Outside")
+                                                {
+                                                    continue;
+                                                }
+                                            }
+                                            //If !hediff.parts.contains(item.part). This will let you know if item is a child element. May will have to use any for that compare label short?
 
-                                            //}
-
-
-                                            //options.Add(
-                                            //    (FloatMenuOption)
-                                            //        generateSurgeryBillMethod.Invoke(
-                                            //            null,
-                                            //            new object[]
-                                            //            {
-                                            //                pawn,
-                                            //                pawn,
-                                            //                recipe,
-                                            //                enumerable,
-                                            //                report,
-                                            //                num++,
-                                            //                item
-                                            //            }
-                                            //        )
-                                            //);
+                                            options.Add(
+                                                (FloatMenuOption)
+                                                    generateSurgeryBillMethod.Invoke(
+                                                        null,
+                                                        new object[]
+                                                        {
+                                                            pawn,
+                                                            pawn,
+                                                            recipe,
+                                                            enumerable,
+                                                            report,
+                                                            num++,
+                                                            item
+                                                        }
+                                                    )
+                                            );
                                         }
                                         catch (Exception ex)
                                         {
