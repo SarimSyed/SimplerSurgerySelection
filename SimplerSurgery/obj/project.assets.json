@@ -2,7 +2,7 @@
   "version": 3,
   "targets": {
     ".NETFramework,Version=v4.7.2": {
-      "Krafs.Rimworld.Ref/1.5.4104": {
+      "Krafs.Rimworld.Ref/1.5.4297": {
         "type": "package",
         "compile": {
           "ref/net472/Assembly-CSharp-firstpass.dll": {},
@@ -107,7 +107,7 @@
       }
     },
     ".NETFramework,Version=v4.7.2/win": {
-      "Krafs.Rimworld.Ref/1.5.4104": {
+      "Krafs.Rimworld.Ref/1.5.4297": {
         "type": "package",
         "compile": {
           "ref/net472/Assembly-CSharp-firstpass.dll": {},
@@ -212,7 +212,7 @@
       }
     },
     ".NETFramework,Version=v4.7.2/win-arm64": {
-      "Krafs.Rimworld.Ref/1.5.4104": {
+      "Krafs.Rimworld.Ref/1.5.4297": {
         "type": "package",
         "compile": {
           "ref/net472/Assembly-CSharp-firstpass.dll": {},
@@ -317,7 +317,7 @@
       }
     },
     ".NETFramework,Version=v4.7.2/win-x64": {
-      "Krafs.Rimworld.Ref/1.5.4104": {
+      "Krafs.Rimworld.Ref/1.5.4297": {
         "type": "package",
         "compile": {
           "ref/net472/Assembly-CSharp-firstpass.dll": {},
@@ -422,7 +422,7 @@
       }
     },
     ".NETFramework,Version=v4.7.2/win-x86": {
-      "Krafs.Rimworld.Ref/1.5.4104": {
+      "Krafs.Rimworld.Ref/1.5.4297": {
         "type": "package",
         "compile": {
           "ref/net472/Assembly-CSharp-firstpass.dll": {},
@@ -528,17 +528,17 @@
     }
   },
   "libraries": {
-    "Krafs.Rimworld.Ref/1.5.4104": {
-      "sha512": "/EQrSATOpDbBNtYDQJIT27FMNTuzL6fVuvyCxoqHWWdoINjljPna8s2/9wqD5AwDGiG9A8QN53zXnWTqUdy0Cw==",
+    "Krafs.Rimworld.Ref/1.5.4297": {
+      "sha512": "uhY1DK8YQB55IamhyOus6A//S47F93JiOe5ORBv+KnN9HNOanAQY8TaBMKpJKhdZj2GHYny/7rZixjv4DAKYMQ==",
       "type": "package",
-      "path": "krafs.rimworld.ref/1.5.4104",
+      "path": "krafs.rimworld.ref/1.5.4297",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE.md",
         "README.md",
         "icon.png",
-        "krafs.rimworld.ref.1.5.4104.nupkg.sha512",
+        "krafs.rimworld.ref.1.5.4297.nupkg.sha512",
         "krafs.rimworld.ref.nuspec",
         "ref/net472/Assembly-CSharp-firstpass.dll",
         "ref/net472/Assembly-CSharp.dll",
@@ -675,25 +675,31 @@
   },
   "projectFileDependencyGroups": {
     ".NETFramework,Version=v4.7.2": [
-      "Krafs.Rimworld.Ref >= 1.5.4104",
-      "Lib.Harmony >= 2.3.3"
+      "Krafs.Rimworld.Ref >= 1.5.4297",
+      "lib.harmony >= 2.3.3"
     ]
   },
   "packageFolders": {
-    "C:\\Users\\asari\\.nuget\\packages\\": {}
+    "C:\\Users\\Sarim\\.nuget\\packages\\": {},
+    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj",
+      "projectUniqueName": "C:\\Users\\Sarim\\Documents\\Personal Projects\\SimplerSurgerySelection\\SimplerSurgery\\SimplerSurgery.csproj",
       "projectName": "SimplerSurgery",
-      "projectPath": "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj",
-      "packagesPath": "C:\\Users\\asari\\.nuget\\packages\\",
-      "outputPath": "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\obj\\",
+      "projectPath": "C:\\Users\\Sarim\\Documents\\Personal Projects\\SimplerSurgerySelection\\SimplerSurgery\\SimplerSurgery.csproj",
+      "packagesPath": "C:\\Users\\Sarim\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Sarim\\Documents\\Personal Projects\\SimplerSurgerySelection\\SimplerSurgery\\obj\\",
       "projectStyle": "PackageReference",
       "skipContentFileWrite": true,
+      "UsingMicrosoftNETSdk": false,
+      "fallbackFolders": [
+        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+      ],
       "configFilePaths": [
-        "C:\\Users\\asari\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Sarim\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
@@ -718,11 +724,10 @@
       "net472": {
         "dependencies": {
           "Krafs.Rimworld.Ref": {
-            "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
             "target": "Package",
-            "version": "[1.5.4104, )"
+            "version": "[1.5.4297, )"
           },
-          "Lib.Harmony": {
+          "lib.harmony": {
             "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
             "target": "Package",
             "version": "[2.3.3, )"

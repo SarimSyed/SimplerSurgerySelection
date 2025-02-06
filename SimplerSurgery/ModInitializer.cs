@@ -110,7 +110,8 @@ namespace SimplerSurgery
             IEnumerable<RecipeDef> recipes = pawn.def.AllRecipes.Where(r =>
             {
                 // Get all ancestors of the current part
-                List<BodyPartRecord> allAncestors = GetAllAncestors(hediff.Part);
+                int counter = 0;
+                List<BodyPartRecord> allAncestors = GetAllAncestors(hediff.Part, counter);
 
                 // Check if the recipe applies to the current part or any of its ancestors
                 bool appliesToCurrentOrAncestors =
@@ -199,7 +200,8 @@ namespace SimplerSurgery
                         {
                             if (recipe.targetsBodyPart)
                             {
-                                IEnumerable<BodyPartRecord> parents = GetAllAncestors(hediff.Part);
+                                int counter = 0;
+                                IEnumerable<BodyPartRecord> parents = GetAllAncestors(hediff.Part, counter);
 
                                 foreach (
                                     //Maybe add a check for 'left' or 'right' here
@@ -257,7 +259,7 @@ namespace SimplerSurgery
                                                 //)
                                                 )
                                                 .ToList();
-                                            int counter = 0;
+                                            //int counter = 0;
                                             int totalItems = filteredList.Count();
                                             //foreach (BodyPartRecord part in filteredList)
                                             //{
@@ -410,7 +412,7 @@ namespace SimplerSurgery
 
         //Recursive funtion that gets all the parent parts
 
-        private static List<BodyPartRecord> GetAllAncestors(this BodyPartRecord part)
+        private static List<BodyPartRecord> GetAllAncestors(this BodyPartRecord part, int counter)
         {
             List<BodyPartRecord> ancestors = new List<BodyPartRecord>();
             BodyPartRecord current = part.parent;
@@ -419,6 +421,7 @@ namespace SimplerSurgery
             {
                 ancestors.Add(current);
                 current = current.parent;
+                counter++;
             }
 
             return ancestors;

@@ -1,21 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj": {}
+    "C:\\Users\\Sarim\\Documents\\Personal Projects\\SimplerSurgerySelection\\SimplerSurgery\\SimplerSurgery.csproj": {}
   },
   "projects": {
-    "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj": {
+    "C:\\Users\\Sarim\\Documents\\Personal Projects\\SimplerSurgerySelection\\SimplerSurgery\\SimplerSurgery.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj",
+        "projectUniqueName": "C:\\Users\\Sarim\\Documents\\Personal Projects\\SimplerSurgerySelection\\SimplerSurgery\\SimplerSurgery.csproj",
         "projectName": "SimplerSurgery",
-        "projectPath": "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\SimplerSurgery.csproj",
-        "packagesPath": "C:\\Users\\asari\\.nuget\\packages\\",
-        "outputPath": "E:\\Games\\RimworldBackup\\RimWorld_Debug\\Mods\\SimplerSurgery\\SimplerSurgery\\obj\\",
+        "projectPath": "C:\\Users\\Sarim\\Documents\\Personal Projects\\SimplerSurgerySelection\\SimplerSurgery\\SimplerSurgery.csproj",
+        "packagesPath": "C:\\Users\\Sarim\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Sarim\\Documents\\Personal Projects\\SimplerSurgerySelection\\SimplerSurgery\\obj\\",
         "projectStyle": "PackageReference",
         "skipContentFileWrite": true,
+        "UsingMicrosoftNETSdk": false,
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\asari\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Sarim\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
@@ -40,11 +45,10 @@
         "net472": {
           "dependencies": {
             "Krafs.Rimworld.Ref": {
-              "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "target": "Package",
-              "version": "[1.5.4104, )"
+              "version": "[1.5.4297, )"
             },
-            "Lib.Harmony": {
+            "lib.harmony": {
               "include": "Compile, Build, Native, ContentFiles, Analyzers, BuildTransitive",
               "target": "Package",
               "version": "[2.3.3, )"

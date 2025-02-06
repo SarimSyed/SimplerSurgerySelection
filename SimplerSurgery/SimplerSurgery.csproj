@@ -43,9 +43,9 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref">
-      <Version>1.5.4104</Version>
+      <Version>1.5.4297</Version>
     </PackageReference>
-    <PackageReference Include="Lib.Harmony">
+    <PackageReference Include="lib.harmony">
       <Version>2.3.3</Version>
     </PackageReference>
   </ItemGroup>
